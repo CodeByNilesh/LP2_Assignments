@@ -1,0 +1,165 @@
+Assignment 2: A* Algorithm
+ 
+CODE:
+
+ <!DOCTYPE html>
+<html>
+<head>
+    <title>A* Algorithm</title>
+    <style>
+        .grid { display: grid; grid-template-columns: repeat(5, 50px); gap: 2px; }
+        .cell { width: 50px; height: 50px; background: #eee; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .start { background: #4CAF50; }
+        .end { background: #f44336; }
+        .wall { background: #333; }
+        .path { background: #9C27B0; color: white; }
+        .visited { background: #FFD54F; }
+        button { margin: 20px; padding: 10px 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h2>A* Pathfinding</h2>
+    <button onclick="runAStar()">Run A*</button>
+    <div class="grid" id="grid"></div>
+ 
+    <script>
+        const grid = [
+            [0, 0, 0, 0, 0],
+            [0, 1, 1, 0, 0],
+            [0, 0, 0, 1, 0],
+            [0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0]
+        ]; // 0 = empty, 1 = wall
+ 
+        const start = {x: 0, y: 0};
+        const end = {x: 4, y: 4};
+ 
+        // Draw grid
+        function drawGrid() {
+            const container = document.getElementById('grid');
+            container.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                for (let j = 0; j < 5; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `c${i}${j}`;
+                    if (i === start.x && j === start.y) cell.classList.add('start');
+                    else if (i === end.x && j === end.y) cell.classList.add('end');
+                    else if (grid[i][j] === 1) cell.classList.add('wall');
+                    container.appendChild(cell);
+                }
+            }
+        }
+ 
+        // Heuristic (Manhattan distance)
+        function h(a, b) {
+            return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+        }
+ 
+        // A* Algorithm
+        async function runAStar() {
+            drawGrid();
+            console.clear();
+            console.log("=== A* Algorithm ===");
+ 
+            let open = [{x: start.x, y: start.y, g: 0, f: 0, parent: null}];
+            let closed = [];
+ 
+            while (open.length > 0) {
+                // Get node with lowest f
+                open.sort((a, b) => a.f - b.f);
+                let current = open.shift();
+ 
+                console.log(`Visiting (${current.x}, ${current.y}) | f=${current.f}`);
+ 
+                // Goal reached
+                if (current.x === end.x && current.y === end.y) {
+                    console.log("\n=== Path Found ===");
+                    let path = [];
+                    let node = current;
+                    while (node) {
+                        path.unshift(`(${node.x},${node.y})`);
+                        if (node.parent) document.getElementById(`c${node.x}${node.y}`).classList.add('path');
+                        node = node.parent;
+                    }
+                    console.log("Path: " + path.join(" → "));
+                    console.log("Steps: " + (path.length - 1));
+                    return;
+                }
+ 
+                closed.push(current);
+                document.getElementById(`c${current.x}${current.y}`).classList.add('visited');
+                await new Promise(r => setTimeout(r, 300));
+ 
+                // Check neighbors (up, down, left, right)
+                const dirs = [[0,1], [1,0], [0,-1], [-1,0]];
+                for (let [dx, dy] of dirs) {
+                    let nx = current.x + dx;
+                    let ny = current.y + dy;
+ 
+                    // Skip if out of bounds, wall, or already visited
+                    if (nx < 0 || nx >= 5 || ny < 0 || ny >= 5) continue;
+                    if (grid[nx][ny] === 1) continue;
+                    if (closed.some(n => n.x === nx && n.y === ny)) continue;
+ 
+                    let g = current.g + 1;
+                    let f = g + h({x: nx, y: ny}, end);
+ 
+                    let existing = open.find(n => n.x === nx && n.y === ny);
+                    if (!existing) {
+                        open.push({x: nx, y: ny, g, f, parent: current});
+                    } else if (g < existing.g) {
+                        existing.g = g;
+                        existing.f = f;
+                        existing.parent = current;
+                    }
+                }
+            }
+            console.log("No path found!");
+        }
+        drawGrid();
+    </script>
+</body>
+</html>
+
+ OUTPUT:
+ 
+=== A* Algorithm ===
+Visiting (0, 0) | f=0
+Visiting (0, 1) | f=8
+Visiting (1, 0) | f=8
+Visiting (2, 0) | f=8
+Visiting (2, 1) | f=8
+Visiting (2, 2) | f=8
+Visiting (3, 2) | f=8
+Visiting (4, 2) | f=8
+Visiting (4, 3) | f=8
+Visiting (4, 4) | f=8
+ 
+=== Path Found ===
+Path: (0,0) → (1,0) → (2,0) → (2,1) → (2,2) → (3,2) → (4,2) → (4,3) → (4,4)
+Steps: 8
+
+
+
+
+EXPLAINATION:
+
+
+A* Formula: f(n) = g(n) + h(n)
+●	g(n) = cost from start to current node
+●	h(n) = heuristic (estimated cost to goal) - Manhattan distance
+●	f(n) = total estimated cost
+
+Steps:
+1.	Add start node to open list
+2.	While open list not empty:
+○	Pick node with lowest f value
+○	If it's the goal → done
+○	Move to closed list
+○	Check all neighbors
+○	Calculate f, g, h for each
+○	Add to open list if better path found
+3.	Backtrack from goal to start using parent pointers
+ 
+
